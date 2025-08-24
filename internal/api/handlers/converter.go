@@ -59,7 +59,10 @@ func ConvertHandler(w http.ResponseWriter, r *http.Request) {
 	outputFilename := fmt.Sprintf("%s.pdf", uniqueID)
 	outputPath := filepath.Join("uploads", outputFilename)
 
-	err = services.ImagesToPDF(imagePaths, outputPath)
+	fitSmall := r.URL.Query().Get("fit") == "true"
+	position := r.URL.Query().Get("position")
+	orientation := r.URL.Query().Get("orientation")
+	err = services.ImagesToPDF(imagePaths, outputPath, fitSmall, position, orientation)
 	if err != nil {
 		http.Error(w, "Failed to generate PDF", http.StatusInternalServerError)
 		return
