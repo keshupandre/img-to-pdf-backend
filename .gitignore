@@ -1,0 +1,43 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Dependency directories
+dep/
+vendor/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE/editor folders
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# Uploaded/generated files
+uploads/*
+!uploads/.gitkeep
+
+
+# Build artifacts
+*.a
+
+# Coverage files
+*.coverprofile
+*.cov
+
+# Test binary
+*.test
+
+# Environment files
+.env
