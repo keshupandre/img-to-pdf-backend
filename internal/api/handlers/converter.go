@@ -1,11 +1,13 @@
 package handlers
 
 import (
-	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 
+	"github.com/google/uuid"
 	"github.com/keshupandre/img-to-pdf-backend/internal/services"
 )
 
@@ -53,16 +55,25 @@ func ConvertHandler(w http.ResponseWriter, r *http.Request) {
 		imagePaths = append(imagePaths, tmpPath)
 	}
 
-	// Convert to PDF
-	outputPath := filepath.Join(uploadsDir, "output.pdf")
+	uniqueID := uuid.New().String()
+	outputFilename := fmt.Sprintf("%s.pdf", uniqueID)
+	outputPath := filepath.Join("uploads", outputFilename)
+
 	err = services.ImagesToPDF(imagePaths, outputPath)
 	if err != nil {
 		http.Error(w, "Failed to generate PDF", http.StatusInternalServerError)
 		return
 	}
 
-	// Response (URL path should be relative to /uploads/)
-	response := map[string]string{"pdf_url": "/uploads/output.pdf"}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	w.Header().Set("Content-Type", "application/pdf")
+	w.Header().Set("Content-Disposition", "attachment; filename=output.pdf")
+
+	pdfFile, err := os.Open(outputPath)
+	if err != nil {
+		http.Error(w, "Could not open generated PDF", http.StatusInternalServerError)
+		return
+	}
+	defer pdfFile.Close()
+
+	io.Copy(w, pdfFile)
 }
