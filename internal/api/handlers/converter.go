@@ -12,10 +12,7 @@ import (
 )
 
 func ConvertHandler(w http.ResponseWriter, r *http.Request) {
-
-	cwd, _ := os.Getwd()
-
-	uploadsDir := filepath.Join(cwd, "uploads")
+	uploadsDir := "uploads"
 	os.MkdirAll(uploadsDir, os.ModePerm)
 
 	err := r.ParseMultipartForm(10 << 20) // 10 MB
@@ -23,7 +20,7 @@ func ConvertHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid file upload", http.StatusBadRequest)
 		return
 	}
-	files := r.MultipartForm.File["images"] // form field name = "images"
+	files := r.MultipartForm.File["images"]
 	if len(files) == 0 {
 		http.Error(w, "No images uploaded", http.StatusBadRequest)
 		return
@@ -36,17 +33,16 @@ func ConvertHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Failed to open uploaded file", http.StatusInternalServerError)
 			return
 		}
+		defer file.Close()
 
 		tmpPath := filepath.Join(uploadsDir, fileHeader.Filename)
 		out, err := os.Create(tmpPath)
 		if err != nil {
-			file.Close()
 			http.Error(w, "Failed to create file on server", http.StatusInternalServerError)
 			return
 		}
 
-		_, err = out.ReadFrom(file)
-		file.Close()
+		_, err = io.Copy(out, file)
 		out.Close()
 		if err != nil {
 			http.Error(w, "Failed to save uploaded file", http.StatusInternalServerError)
@@ -57,11 +53,12 @@ func ConvertHandler(w http.ResponseWriter, r *http.Request) {
 
 	uniqueID := uuid.New().String()
 	outputFilename := fmt.Sprintf("%s.pdf", uniqueID)
-	outputPath := filepath.Join("uploads", outputFilename)
+	outputPath := filepath.Join(uploadsDir, outputFilename)
 
 	fitSmall := r.URL.Query().Get("fit") == "true"
 	position := r.URL.Query().Get("position")
 	orientation := r.URL.Query().Get("orientation")
+
 	err = services.ImagesToPDF(imagePaths, outputPath, fitSmall, position, orientation)
 	if err != nil {
 		http.Error(w, "Failed to generate PDF", http.StatusInternalServerError)
@@ -69,7 +66,7 @@ func ConvertHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/pdf")
-	w.Header().Set("Content-Disposition", "attachment; filename=output.pdf")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", outputFilename))
 
 	pdfFile, err := os.Open(outputPath)
 	if err != nil {
