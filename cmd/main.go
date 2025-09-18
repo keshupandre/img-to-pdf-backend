@@ -68,7 +68,7 @@ func main() {
 	}
 
 	// Start server
-	serverAddr := cfg.Server.Host + ":" + cfg.Server.Port
+	serverAddr := ":" + cfg.Server.Port
 	log.Printf("Server starting on http://%s", serverAddr)
 	log.Printf("CORS allowed origins: %v", cfg.CORS.AllowedOrigins)
 	log.Printf("Upload config: MaxFileSize=%d bytes, MaxFiles=%d", cfg.Upload.MaxFileSize, cfg.Upload.MaxFiles)

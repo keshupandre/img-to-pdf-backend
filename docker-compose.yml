@@ -4,14 +4,21 @@ services:
   backend:
     build: .
     deploy:
-      replicas: 3
+      replicas: 3                  # Run 3 replicas of backend
+      restart_policy:
+        condition: on-failure       # Auto restart if container crashes
     expose:
-      - "8080"
+      - "8080"                      # Internal port only (not published)
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   backend-lb:
     image: nginx:alpine
     ports:
-      - "8080:80"
+      - "8080:80"                   # Publicly exposed LB
     depends_on:
       - backend
     volumes:
